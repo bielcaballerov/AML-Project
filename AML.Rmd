@@ -1,0 +1,28 @@
+---
+title: "Block2 project"
+author: "Biel Caballero and Gerard Gomez"
+date: "2023-10-16"
+output: html_document
+---
+
+
+## First we read the file:
+```{r}
+setwd("/Users/Gerard/Desktop/Master/S3/AML/Block2 lab/")
+data <- read.csv(file = "ObesityDataSet_raw_and_data_sinthetic.csv")
+head(data)
+```
+
+```{r}
+data$Gender <- as.factor(data$Gender)
+data$family_history_with_overweight <- as.factor(data$family_history_with_overweight)
+data$FAVC <- as.factor(data$FAVC)
+data$CAEC <- as.factor(data$CAEC)
+data$SMOKE <- as.factor(data$SMOKE)
+data$SCC <- as.factor(data$SCC)
+data$CALC <- as.factor(data$CALC)
+data$MTRANS <- as.factor(data$MTRANS)
+data$NObeyesdad <- as.factor(data$NObeyesdad)
+str(data)                
+```
+
