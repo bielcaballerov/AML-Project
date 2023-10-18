@@ -5,6 +5,9 @@ date: "2023-10-16"
 output: html_document
 ---
 
+```{r}
+library(ggplot2)
+```
 
 ## First we read the file:
 ```{r}
@@ -13,6 +16,15 @@ data <- read.csv(file = "ObesityDataSet_raw_and_data_sinthetic.csv")
 head(data)
 ```
 
+## Grouping target data into 5 groups
+```{r}
+levels(data$NObeyesdad)
+data[data$NObeyesdad %in% c("Obesity_Type_I","Obesity_Type_II","Obesity_Type_III"),17] <- "Obesity"
+data[data$NObeyesdad %in% c("Overweight_Level_I","Overweight_Level_II"),17] <- "Overweight"
+```
+As the target has a lot of redundant classes, like Obesity type I, Obesity type II, and Obesity type III, we join all of the minto only in group, which will be obesity. We do the same with the overweight group.
+
+Next we correct the data type and set the categories as factors instead of strings:
 ```{r}
 data$Gender <- as.factor(data$Gender)
 data$family_history_with_overweight <- as.factor(data$family_history_with_overweight)
@@ -26,3 +38,104 @@ data$NObeyesdad <- as.factor(data$NObeyesdad)
 str(data)                
 ```
 
+## Separe data between train and test:
+Then we separate the data into training and testing using 70% of the data for train, and 30% for test. 
+```{r}
+## 70% of the sample size
+smp_size <- floor(0.7 * nrow(data))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+
+train <- data[train_ind, ]
+test <- data[-train_ind, ]
+```
+
+## Explotation Data Analysis
+First we start with the univariate analysis
+```{r}
+# Categorical data
+par(mfrow = c(3,3))
+ggplot(train, aes(x = Gender, fill = Gender)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "Gender") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = family_history_with_overweight, fill = family_history_with_overweight)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "Overweight history") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = FAVC, fill = FAVC)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "FAVC") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = CAEC, fill = CAEC)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "CAEC") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = SMOKE, fill=SMOKE)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "Smokes") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = SCC, fill=SCC)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "SCC") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = CALC, fill=CALC)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "CALC") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = MTRANS, fill=MTRANS)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "Method of transportation") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+ggplot(train, aes(x = NObeyesdad, fill=NObeyesdad)) + 
+  geom_histogram(stat="count") + 
+  labs(x = "Obese level") + 
+  theme_minimal() + 
+  theme(axis.line.x = element_line(),
+        axis.line.y = element_line())
+
+
+
+```
+
+Now we continue with the univariate analysis of the numerical variables:
+```{r}
+boxplot(train[,c("Height","FCVC","NCP","CH2O","FAF","TUE")])
+```
+```{r}
+boxplot(train[,c("Age","Weight")])
+```
+Next we are interested in testing for normality for all our numerical variables. This will be useful in order to know which algorithms to choose, as some assume normality of the data
+```{r}
+shapiro.test(train$Age) # P-value < 2.2e-16 --> Not normal
+shapiro.test(train$Height) # P-value 5.686e-06 --> Not normal
+
+```
+
+## Bivariate analysis
