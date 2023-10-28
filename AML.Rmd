@@ -11,30 +11,36 @@ library(ggplot2)
 
 ## First we read the file:
 ```{r}
-setwd("/Users/Gerard/Desktop/Master/S3/AML/Block2 lab/")
-data <- read.csv(file = "ObesityDataSet_raw_and_data_sinthetic.csv")
+#setwd("/Users/Gerard/Desktop/Master/S3/AML/Block2 lab/")
+setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
+data <- read.csv(file = "heart_data.csv")
 head(data)
 ```
 
-## Grouping target data into 5 groups
-```{r}
-levels(data$NObeyesdad)
-data[data$NObeyesdad %in% c("Obesity_Type_I","Obesity_Type_II","Obesity_Type_III"),17] <- "Obesity"
-data[data$NObeyesdad %in% c("Overweight_Level_I","Overweight_Level_II"),17] <- "Overweight"
-```
-As the target has a lot of redundant classes, like Obesity type I, Obesity type II, and Obesity type III, we join all of the minto only in group, which will be obesity. We do the same with the overweight group.
+## Preprocessing
 
-Next we correct the data type and set the categories as factors instead of strings:
+First, we remove the first two columns as they do not add more information to the dataset:
 ```{r}
-data$Gender <- as.factor(data$Gender)
-data$family_history_with_overweight <- as.factor(data$family_history_with_overweight)
-data$FAVC <- as.factor(data$FAVC)
-data$CAEC <- as.factor(data$CAEC)
-data$SMOKE <- as.factor(data$SMOKE)
-data$SCC <- as.factor(data$SCC)
-data$CALC <- as.factor(data$CALC)
-data$MTRANS <- as.factor(data$MTRANS)
-data$NObeyesdad <- as.factor(data$NObeyesdad)
+data<-data[,-c(1,2)]
+head(data)
+```
+
+After that, we compute the age of each individual in years (as the data is in terms of days):
+```{r}
+data[,1]<-round((data[,1]/365),0)
+head(data)
+```
+
+
+Next we correct the data type and set the categories as factors instead of integers:
+```{r}
+data$gender <- as.factor(data$gender)
+data$cholesterol <- as.factor(data$cholesterol)
+data$gluc <- as.factor(data$gluc)
+data$smoke <- as.factor(data$smoke)
+data$alco <- as.factor(data$alco)
+data$active <- as.factor(data$active)
+data$cardio <- as.factor(data$cardio)
 str(data)                
 ```
 
@@ -57,83 +63,76 @@ First we start with the univariate analysis
 ```{r}
 # Categorical data
 par(mfrow = c(3,3))
-ggplot(train, aes(x = Gender, fill = Gender)) + 
+ggplot(train, aes(x = gender, fill = gender)) + 
   geom_histogram(stat="count") + 
-  labs(x = "Gender") + 
+  labs(x = "gender") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
 
-ggplot(train, aes(x = family_history_with_overweight, fill = family_history_with_overweight)) + 
+ggplot(train, aes(x = cholesterol, fill = cholesterol)) + 
   geom_histogram(stat="count") + 
-  labs(x = "Overweight history") + 
+  labs(x = "cholesterol") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
 
-ggplot(train, aes(x = FAVC, fill = FAVC)) + 
+ggplot(train, aes(x = gluc, fill = gluc)) + 
   geom_histogram(stat="count") + 
-  labs(x = "FAVC") + 
+  labs(x = "gluc") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
 
-ggplot(train, aes(x = CAEC, fill = CAEC)) + 
+ggplot(train, aes(x = smoke, fill = smoke)) + 
   geom_histogram(stat="count") + 
-  labs(x = "CAEC") + 
+  labs(x = "smoke") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
 
-ggplot(train, aes(x = SMOKE, fill=SMOKE)) + 
+ggplot(train, aes(x = alco, fill=alco)) + 
   geom_histogram(stat="count") + 
-  labs(x = "Smokes") + 
+  labs(x = "alco") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
 
-ggplot(train, aes(x = SCC, fill=SCC)) + 
+ggplot(train, aes(x = active, fill=active)) + 
   geom_histogram(stat="count") + 
-  labs(x = "SCC") + 
+  labs(x = "active") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
 
-ggplot(train, aes(x = CALC, fill=CALC)) + 
+ggplot(train, aes(x = cardio, fill=cardio)) + 
   geom_histogram(stat="count") + 
-  labs(x = "CALC") + 
+  labs(x = "cardio") + 
   theme_minimal() + 
   theme(axis.line.x = element_line(),
         axis.line.y = element_line())
-
-ggplot(train, aes(x = MTRANS, fill=MTRANS)) + 
-  geom_histogram(stat="count") + 
-  labs(x = "Method of transportation") + 
-  theme_minimal() + 
-  theme(axis.line.x = element_line(),
-        axis.line.y = element_line())
-
-ggplot(train, aes(x = NObeyesdad, fill=NObeyesdad)) + 
-  geom_histogram(stat="count") + 
-  labs(x = "Obese level") + 
-  theme_minimal() + 
-  theme(axis.line.x = element_line(),
-        axis.line.y = element_line())
-
-
 
 ```
 
 Now we continue with the univariate analysis of the numerical variables:
 ```{r}
-boxplot(train[,c("Height","FCVC","NCP","CH2O","FAF","TUE")])
+boxplot(train[,c("age","height","weight")])
 ```
 ```{r}
-boxplot(train[,c("Age","Weight")])
+boxplot(train[,c("ap_hi","ap_lo")])
 ```
+## Data Cleaning
+
+We have found some extremely high and extremely low values that do not fall in the range of the American Heart Association (https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings). 
+
+```{r}
+df <- data[data$ap_hi <= 200 & data$ap_hi >= 100 & data$ap_lo <= 140 & data$ap_lo >= 60, ] 
+```
+
+
 Next we are interested in testing for normality for all our numerical variables. This will be useful in order to know which algorithms to choose, as some assume normality of the data
 ```{r}
-shapiro.test(train$Age) # P-value < 2.2e-16 --> Not normal
+shapiro.test(train$ap_hi) # P-value < 2.2e-16 --> Not normal
 shapiro.test(train$Height) # P-value 5.686e-06 --> Not normal
 
 ```
