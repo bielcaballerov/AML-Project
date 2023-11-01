@@ -126,7 +126,7 @@ boxplot(train[,c("ap_hi","ap_lo")])
 We have found some extremely high and extremely low values that do not fall in the range of the American Heart Association (https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings). 
 
 ```{r}
-df <- data[data$ap_hi <= 200 & data$ap_hi >= 100 & data$ap_lo <= 140 & data$ap_lo >= 60, ] 
+df <- data[data$ap_hi <= 200 & data$ap_hi >= 100 & data$ap_lo <= 140 & data$ap_lo >= 60 & data$height >= 120 & data$weight >= 40, ] 
 ```
 
 
