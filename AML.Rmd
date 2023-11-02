@@ -7,12 +7,14 @@ output: html_document
 
 ```{r}
 library(ggplot2)
+library(FactoMineR)
+library(factoextra)
 ```
 
 ## First we read the file:
 ```{r}
 #setwd("/Users/Gerard/Desktop/Master/S3/AML/Block2 lab/")
-setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
+#setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
 data <- read.csv(file = "heart_data.csv")
 head(data)
 ```
@@ -132,9 +134,61 @@ df <- data[data$ap_hi <= 200 & data$ap_hi >= 100 & data$ap_lo <= 140 & data$ap_l
 
 Next we are interested in testing for normality for all our numerical variables. This will be useful in order to know which algorithms to choose, as some assume normality of the data
 ```{r}
-shapiro.test(train$ap_hi) # P-value < 2.2e-16 --> Not normal
-shapiro.test(train$Height) # P-value 5.686e-06 --> Not normal
+#shapiro.test(train$ap_hi) # P-value < 2.2e-16 --> Not normal
+#shapiro.test(train$Height) # P-value 5.686e-06 --> Not normal
 
 ```
 
 ## Bivariate analysis
+
+```{r}
+
+```
+
+## PCA
+
+```{r}
+pca_df <- PCA(df[,c("age","height","weight","ap_hi","ap_lo")], graph = F)
+
+# show scree plot of PCA
+scree_plot <- fviz_screeplot(pca_df, addlabels = TRUE) # With the three fist principal we can explain an 81.6% of the data 
+ggsave("screeplot.png", plot = scree_plot)
+```
+
+```{r}
+pca.y = as.data.frame(pca_df$ind$coord)
+ind.smpl.10000 = sample(1:nrow(pca.y),size = 10000,replace = F)
+
+PCA_12 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.1 , y = Dim.2, col = df$cardio[ind.smpl.10000])) + 
+  geom_point() + 
+  theme_minimal() + 
+  theme(axis.line = element_line()) +
+  scale_color_manual("Cardio", values = c("#1F968BFF", "#FDE725FF"), labels = c("No","Yes"))
+
+PCA_13 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.1 , y = Dim.3, col = df$cardio[ind.smpl.10000])) + 
+  geom_point() + 
+  theme_minimal() + 
+  theme(axis.line = element_line()) +
+  scale_color_manual("Cardio", values = c("#1F968BFF", "#FDE725FF"), labels = c("No","Yes"))
+
+PCA_23 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.2 , y = Dim.3, col = df$cardio[ind.smpl.10000])) + 
+  geom_point() + 
+  theme_minimal() + 
+  theme(axis.line = element_line()) +
+  scale_color_manual("Cardio", values = c("#1F968BFF", "#FDE725FF"), labels = c("No","Yes"))
+
+ggsave("pca_12.png", plot = PCA_12)
+ggsave("pca_13.png", plot = PCA_13)
+ggsave("pca_23.png", plot = PCA_23)
+```
+
+```{r}
+varplot_12 <- fviz_pca_var(pca_df, axes = c(1,2), col.var = "steelblue")
+varplot_13 <- fviz_pca_var(pca_df, axes = c(1,3), col.var = "steelblue")
+varplot_23 <- fviz_pca_var(pca_df, axes = c(2,3), col.var = "steelblue")
+
+ggsave("var_12.png", plot = varplot_12)
+ggsave("var_13.png", plot = varplot_13)
+ggsave("var_23.png", plot = varplot_23)
+```
+
