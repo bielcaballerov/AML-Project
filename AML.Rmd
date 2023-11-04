@@ -9,6 +9,10 @@ output: html_document
 library(ggplot2)
 library(FactoMineR)
 library(factoextra)
+library(e1071)
+library(corrplot)
+library(cluster)
+library(GGally)
 ```
 
 ## First we read the file:
@@ -45,19 +49,26 @@ data$active <- as.factor(data$active)
 data$cardio <- as.factor(data$cardio)
 str(data)                
 ```
+## Data Cleaning
+
+We have found some extremely high and extremely low values that do not fall in the range of the American Heart Association (https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings). 
+
+```{r}
+df <- data[data$ap_hi <= 200 & data$ap_hi >= 100 & data$ap_lo <= 140 & data$ap_lo >= 60 & data$height >= 120 & data$weight >= 40, ] 
+```
 
 ## Separe data between train and test:
 Then we separate the data into training and testing using 70% of the data for train, and 30% for test. 
 ```{r}
 ## 70% of the sample size
-smp_size <- floor(0.7 * nrow(data))
+smp_size <- floor(0.7 * nrow(df))
 
 ## set the seed to make your partition reproducible
 set.seed(123)
-train_ind <- sample(seq_len(nrow(data)), size = smp_size)
+train_ind <- sample(seq_len(nrow(df)), size = smp_size)
 
-train <- data[train_ind, ]
-test <- data[-train_ind, ]
+train <- df[train_ind, ]
+test <- df[-train_ind, ]
 ```
 
 ## Explotation Data Analysis
@@ -123,14 +134,6 @@ boxplot(train[,c("age","height","weight")])
 ```{r}
 boxplot(train[,c("ap_hi","ap_lo")])
 ```
-## Data Cleaning
-
-We have found some extremely high and extremely low values that do not fall in the range of the American Heart Association (https://www.heart.org/en/health-topics/high-blood-pressure/understanding-blood-pressure-readings). 
-
-```{r}
-df <- data[data$ap_hi <= 200 & data$ap_hi >= 100 & data$ap_lo <= 140 & data$ap_lo >= 60 & data$height >= 120 & data$weight >= 40, ] 
-```
-
 
 Next we are interested in testing for normality for all our numerical variables. This will be useful in order to know which algorithms to choose, as some assume normality of the data
 ```{r}
@@ -142,13 +145,17 @@ Next we are interested in testing for normality for all our numerical variables.
 ## Bivariate analysis
 
 ```{r}
+corr <- cor(train[,c("age","height","weight","ap_hi","ap_lo")],method = "spearman")
 
+png("corrplot.png")
+corr.plot <- corrplot(corr,type = "lower")
+while (!is.null(dev.list()))  dev.off()
 ```
 
 ## PCA
 
 ```{r}
-pca_df <- PCA(df[,c("age","height","weight","ap_hi","ap_lo")], graph = F)
+pca_df <- PCA(train[,c("age","height","weight","ap_hi","ap_lo")], graph = F)
 
 # show scree plot of PCA
 scree_plot <- fviz_screeplot(pca_df, addlabels = TRUE) # With the three fist principal we can explain an 81.6% of the data 
@@ -159,19 +166,19 @@ ggsave("screeplot.png", plot = scree_plot)
 pca.y = as.data.frame(pca_df$ind$coord)
 ind.smpl.10000 = sample(1:nrow(pca.y),size = 10000,replace = F)
 
-PCA_12 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.1 , y = Dim.2, col = df$cardio[ind.smpl.10000])) + 
+PCA_12 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.1 , y = Dim.2, col = train$cardio[ind.smpl.10000])) + 
   geom_point() + 
   theme_minimal() + 
   theme(axis.line = element_line()) +
   scale_color_manual("Cardio", values = c("#1F968BFF", "#FDE725FF"), labels = c("No","Yes"))
 
-PCA_13 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.1 , y = Dim.3, col = df$cardio[ind.smpl.10000])) + 
+PCA_13 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.1 , y = Dim.3, col = train$cardio[ind.smpl.10000])) + 
   geom_point() + 
   theme_minimal() + 
   theme(axis.line = element_line()) +
   scale_color_manual("Cardio", values = c("#1F968BFF", "#FDE725FF"), labels = c("No","Yes"))
 
-PCA_23 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.2 , y = Dim.3, col = df$cardio[ind.smpl.10000])) + 
+PCA_23 <- ggplot(pca.y[ind.smpl.10000,], aes(x = Dim.2 , y = Dim.3, col = train$cardio[ind.smpl.10000])) + 
   geom_point() + 
   theme_minimal() + 
   theme(axis.line = element_line()) +
@@ -191,4 +198,29 @@ ggsave("var_12.png", plot = varplot_12)
 ggsave("var_13.png", plot = varplot_13)
 ggsave("var_23.png", plot = varplot_23)
 ```
+## Clustering 
+
+```{r}
+png("sil.png")
+fviz_nbclust(train[ind.smpl.10000,c("age","height","weight","ap_hi","ap_lo")], kmeans, method = "silhouette")
+while (!is.null(dev.list()))  dev.off()
+```
+We can see that the optimal k is at 2 clusters
+
+```{r}
+k.train <- kmeans(train[,c("age","height","weight","ap_hi","ap_lo")],centers = 2)
+
+png("cluster_pairs.png")
+ggpairs(train[,c("age","height","weight","ap_hi","ap_lo")],aes(col=as.factor(k.train$cluster)))
+while (!is.null(dev.list()))  dev.off()
+
+```
+
+
+
+
+
+
+
+
 
