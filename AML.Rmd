@@ -220,9 +220,36 @@ while (!is.null(dev.list()))  dev.off()
 ### SVM kernelization:
 
 ```{r}
-svm.kernel <- svm(cardio ~ ., data=train,kernel = "radial")
+## 70% of the sample size
+smp_size <- floor(0.7 * nrow(train))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(train)), size = smp_size)
+train_model <- train[train_ind, ]
+validation <- train[-train_ind, ]
+
+svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=0.15)
 ```
 
+
+```{r}
+f1_score <- function(model,data){
+    pred <- predict(model, newdata = data[-12])
+  conf.mat <- table(pred,t(validation[12]))
+  
+  precision.0 <- (conf.mat[1])/(conf.mat[1]+conf.mat[3])
+  recall.0 <- (conf.mat[1])/(conf.mat[1]+conf.mat[2])
+  f1_score.0 <- (2*precision.0*recall.0)/(precision.0+recall.0)
+  
+  precision.1 <- (conf.mat[4])/(conf.mat[1]+conf.mat[2])
+  recall.1 <- (conf.mat[4])/(conf.mat[1]+conf.mat[3])
+  f1_score.1 <- (2*precision.1*recall.1)/(precision.1+recall.1)
+  
+  return(list(f1.0 = f1_score.0, f1.1 = f1_score.1))
+}
+f1_score(svm.kernel,validation)
+```
 
 
 
