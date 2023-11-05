@@ -155,7 +155,7 @@ while (!is.null(dev.list()))  dev.off()
 ## PCA
 
 ```{r}
-pca_df <- PCA(train[,c("age","height","weight","ap_hi","ap_lo")], graph = F)
+pca_df <- PCA(train[,c("age","height","weight","ap_hi","ap_lo")], graph = F,scale.unit = T)
 
 # show scree plot of PCA
 scree_plot <- fviz_screeplot(pca_df, addlabels = TRUE) # With the three fist principal we can explain an 81.6% of the data 
@@ -213,10 +213,15 @@ k.train <- kmeans(train[,c("age","height","weight","ap_hi","ap_lo")],centers = 2
 png("cluster_pairs.png")
 ggpairs(train[,c("age","height","weight","ap_hi","ap_lo")],aes(col=as.factor(k.train$cluster)))
 while (!is.null(dev.list()))  dev.off()
-
 ```
 
+## Modeling
 
+### SVM kernelization:
+
+```{r}
+svm.kernel <- svm(cardio ~ ., data=train,kernel = "radial")
+```
 
 
 
