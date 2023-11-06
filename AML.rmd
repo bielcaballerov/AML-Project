@@ -22,7 +22,7 @@ library(caret)
 ## First we read the file:
 ```{r}
 #setwd("/Users/Gerard/Desktop/Master/S3/AML/Block2 lab/")
-setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
+#setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
 data <- read.csv(file = "heart_data.csv")
 head(data)
 ```
@@ -241,22 +241,6 @@ while (!is.null(dev.list()))  dev.off()
 
 ## Modeling
 
-### SVM kernelization:
-
-```{r}
-## 70% of the sample size
-smp_size <- floor(0.7 * nrow(train))
-
-## set the seed to make your partition reproducible
-set.seed(123)
-train_ind <- sample(seq_len(nrow(train)), size = smp_size)
-train_model <- train[train_ind, ]
-validation <- train[-train_ind, ]
-
-svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=0.15)
-```
-
-
 ```{r}
 f1_score <- function(model,data){
     pred <- predict(model, newdata = data[-12])
@@ -272,7 +256,30 @@ f1_score <- function(model,data){
   
   return(list(f1.0 = f1_score.0, f1.1 = f1_score.1))
 }
-f1_score(svm.kernel,validation)
+```
+
+```{r}
+## 70% of the sample size
+smp_size <- floor(0.7 * nrow(train))
+
+## set the seed to make your partition reproducible
+set.seed(123)
+train_ind <- sample(seq_len(nrow(train)), size = smp_size)
+train_model <- train[train_ind, ]
+validation <- train[-train_ind, ]
+
+```
+
+### SVM kernelization:
+
+```{r}
+nu_list <- seq(0.1,0.9, by = 0.05)
+f1_scores <- list()
+
+for(i in 1:length(nu_list)){
+  svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=nu_list[i])
+  f1_scores <- f1_score(svm.kernel,validation)
+}
 ```
 
 
@@ -300,9 +307,3 @@ f1_score <- function(model,data){
 }
 f1_score(svm,test)
 ```
-
-
-
-
-
-
