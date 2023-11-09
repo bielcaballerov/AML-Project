@@ -24,7 +24,7 @@ library(randomForest)
 ## First we read the file:
 ```{r}
 #setwd("/Users/Gerard/Desktop/Master/S3/AML/Block2 lab/")
-setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
+#setwd("/Users/bielcave/Documents/MDS/3rd_Semester/AML/Project/")
 data <- read.csv(file = "heart_data.csv")
 head(data)
 ```
@@ -282,7 +282,7 @@ validation <- train[-train_ind, ]
 ### SVM kernelization:
 
 ```{r}
-nu_list <- seq(0.1,0.9, by = 0.05)
+nu_list <- seq(0.1,0.9, by = 0.1)
 f1_scores <- list()
 
 for(i in 1:length(nu_list)){
@@ -326,30 +326,14 @@ f1_score(svm,validation,FALSE)
 
 ### Random Forest
 ```{r}
-target_variable <- "cardio" # Replace with your target variable name
-predictor_variables <- setdiff(names(train_model), target_variable)
-
-# Create the random forest model
-rf_model <- randomForest(
-  formula = cardio~.,
-  data = train_model,
-  ntree = 100, # Number of trees in the forest
-  mtry = sqrt(length(predictor_variables)) # Number of variables to consider at each split  
-)
+rf_model <- randomForest::randomForest(formula = cardio~.,data = train_model,ntree = 500)
 
 # Print the summary of the random forest model
 print(rf_model)
 
 # Make predictions on the test data
 predictions <- predict(rf_model, newdata = validation[-12])
-table(predictions)
 f1_score(rf_model,validation,TRUE)
 
 varImpPlot(rf_model)
 ```
-
-
-
-
-
-
