@@ -250,8 +250,9 @@ f1_score <- function(model,data,kernel=TRUE){
     conf.mat <- table(pred,t(data[12]))
   }
   else {
-    pred <- predict(model,data,proba=TRUE,decisionValues=TRUE)
+    pred <- predict(model,newx = data[-12])
     conf.mat <- table(pred$prediction,t(data[12]))
+    
   }
   
   
@@ -277,6 +278,9 @@ train_ind <- sample(seq_len(nrow(train)), size = smp_size)
 train_model <- train[train_ind, ]
 validation <- train[-train_ind, ]
 
+train_model[,c("age","height","weight","ap_hi","ap_lo")] = scale(train_model[,c("age","height","weight","ap_hi","ap_lo")])
+validation[,c("age","height","weight","ap_hi","ap_lo")] = scale(validation[,c("age","height","weight","ap_hi","ap_lo")])
+
 ```
 
 ### SVM kernelization:
@@ -287,7 +291,7 @@ f1_scores <- list()
 
 for(i in 1:length(nu_list)){
   svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=nu_list[i])
-  f1_scores <- f1_score(svm.kernel,validation)
+  f1_scores[[i]] <- f1_score(svm.kernel,validation)
 }
 ```
 
@@ -300,8 +304,6 @@ tryCosts=seq(0.1,0.9, by = 0.05)
 bestCost=NA
 bestAcc=0
 bestType=NA
-
-train_model[,c("age","height","weight","ap_hi","ap_lo")] = scale(train_model[,c("age","height","weight","ap_hi","ap_lo")])
 
 for(ty in tryTypes){
 	for(co in tryCosts){
@@ -322,18 +324,21 @@ cat("Best accuracy is:",bestAcc,"\n")
 svm <- LiblineaR(data=train_model[-12],target=train_model[12],type=bestType,cost=bestCost,bias=1,verbose=FALSE)
 
 f1_score(svm,validation,FALSE)
+
+
+pred <- predict(svm, newx = validation[-12],proba = F)
 ```
 
 ### Random Forest
 ```{r}
-rf_model <- randomForest::randomForest(formula = cardio~.,data = train_model,ntree = 500)
+num_tree <- c(50,100,200,300,400,500)
+for(tree in num_tree){
+  rf_model <- randomForest::randomForest(formula = cardio~.,data = train_model,ntree = 500)
 
-# Print the summary of the random forest model
-print(rf_model)
-
-# Make predictions on the test data
-predictions <- predict(rf_model, newdata = validation[-12])
-f1_score(rf_model,validation,TRUE)
+  predictions <- predict(rf_model, newdata = validation[-12])
+  f1_score(rf_model,validation,TRUE)
+}
+  
 
 varImpPlot(rf_model)
 ```
