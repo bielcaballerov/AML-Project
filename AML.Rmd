@@ -274,12 +274,13 @@ smp_size <- floor(0.7 * nrow(train))
 
 ## set the seed to make your partition reproducible
 set.seed(123)
-train_ind <- sample(seq_len(nrow(train)), size = smp_size)
+train_ind <- sample(seq_len(nrow(train)), size = 10000)
 train_model <- train[train_ind, ]
-validation <- train[-train_ind, ]
+validation_ind <- sample(seq_len(nrow(train))[-train_ind], size = 5000)
+validation <- train[validation_ind, ]
 
 train_model[,c("age","height","weight","ap_hi","ap_lo")] = scale(train_model[,c("age","height","weight","ap_hi","ap_lo")])
-validation[,c("age","height","weight","ap_hi","ap_lo")] = scale(validation[,c("age","height","weight","ap_hi","ap_lo")])
+#validation[,c("age","height","weight","ap_hi","ap_lo")] = scale(validation[,c("age","height","weight","ap_hi","ap_lo")])
 
 ```
 
@@ -287,12 +288,16 @@ validation[,c("age","height","weight","ap_hi","ap_lo")] = scale(validation[,c("a
 
 ```{r}
 nu_list <- seq(0.1,0.9, by = 0.1)
-f1_scores <- list()
+accuracy_list <- numeric(length(nu_list))
 
 for(i in 1:length(nu_list)){
-  svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=nu_list[i])
-  f1_scores[[i]] <- f1_score(svm.kernel,validation)
+  svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=nu_list[i],cross = 10)
+  accuracy_list[i] <- svm.kernel$tot.accuracy
 }
+
+svm.kernel <- svm(cardio ~ ., data=train_model, kernel = "radial",type = "nu-classification",nu=nu_list[which.max(accuracy_list)])
+
+f1_score(svm.kernel,validation)
 ```
 
 
@@ -324,21 +329,29 @@ cat("Best accuracy is:",bestAcc,"\n")
 svm <- LiblineaR(data=train_model[-12],target=train_model[12],type=bestType,cost=bestCost,bias=1,verbose=FALSE)
 
 f1_score(svm,validation,FALSE)
-
-
-pred <- predict(svm, newx = validation[-12],proba = F)
 ```
 
 ### Random Forest
 ```{r}
 num_tree <- c(50,100,200,300,400,500)
-for(tree in num_tree){
-  rf_model <- randomForest::randomForest(formula = cardio~.,data = train_model,ntree = 500)
-
-  predictions <- predict(rf_model, newdata = validation[-12])
-  f1_score(rf_model,validation,TRUE)
+accuracy_list = numeric(length(num_tree))
+for(i in 1:length(num_tree)){
+  rf = rfcv(train_model[,-12],train_model[,12],cv.fold = 10,ntree = num_tree[i],recursive = T)
+  accuracy_list[i] <- rf$error.cv[which.min(rf$error.cv)]
 }
-  
 
-varImpPlot(rf_model)
+rf <- randomForest(cardio~., data = train_model, ntree=num_tree[which.min(accuracy_list)])
+f1_score(rf,validation)
 ```
+## Final model
+
+```{r}
+bestmodel = randomForest(cardio~.,data = train,ntree = 300)
+
+f1_score(bestmodel,test)
+```
+
+```{r}
+varImpPlot(bestmodel)
+```
+
